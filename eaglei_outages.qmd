@@ -1,0 +1,33 @@
+---
+title: "eaglei_outages"
+---
+
+```{r setup, include=FALSE}
+library(targets)
+library(here)
+library(ggplot2)
+
+tar_load(all_of(matches("ecdf")),
+         store = here("_targets"))
+```
+
+### EIA comparison
+
+```{r}
+eia_ecdf +
+  scale_x_log10() +
+  scale_y_log10()
+```
+
+
+### NY county comparison
+
+```{r}
+
+```
+
+
+### Figshare (original data)
+
+<iframe src="https://widgets.figshare.com/articles/24237376/embed?show_title=1" width="568" height="351" allowfullscreen frameborder="0"></iframe>
+

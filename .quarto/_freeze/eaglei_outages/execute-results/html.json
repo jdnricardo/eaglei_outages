@@ -1,0 +1,17 @@
+{
+  "hash": "f4c85a77bf27db7c9d73cf940b78c91a",
+  "result": {
+    "engine": "knitr",
+    "markdown": "---\ntitle: \"eaglei_outages\"\n---\n\n\n\n\n### EIA comparison\n\n\n::: {.cell}\n\n```{.r .cell-code}\neia_ecdf +\n  scale_x_log10() +\n  scale_y_log10()\n```\n\n::: {.cell-output .cell-output-stderr}\n\n```\nWarning in scale_y_log10(): log-10 transformation introduced infinite values.\n```\n\n\n:::\n\n::: {.cell-output-display}\n![](eaglei_outages_files/figure-html/unnamed-chunk-1-1.png){width=672}\n:::\n:::\n\n\n\n### NY county comparison\n\n\n::: {.cell}\n\n:::\n\n\n\n### Figshare (original data)\n\n<iframe src=\"https://widgets.figshare.com/articles/24237376/embed?show_title=1\" width=\"568\" height=\"351\" allowfullscreen frameborder=\"0\"></iframe>\n\n",
+    "supporting": [
+      "eaglei_outages_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
