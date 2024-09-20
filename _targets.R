@@ -61,23 +61,9 @@ list(
     command = load_eaglei_year(2021)
   ),
   tar_target(
-    name = select_states,
+    name = states_eaglei,
     command = filter(load_one_year,
                      state %in% c("Louisiana", "Maine"))
-  ),
-  tar_target(
-    name = add_boundaries,
-    command = add_outage_id(select_states)
-  ),
-  tar_target(
-    name = county_monthly,
-    command = summarise_mo_hr(add_boundaries,
-                              c("county", "state", "month"))
-  ),
-  tar_target(
-    name = county_month_hour,
-    command = summarise_mo_hr(add_boundaries,
-                              c("county", "state", "month", "hr"))
   ),
   tar_target(
     name = county_pop,
@@ -90,13 +76,36 @@ list(
     name = clean_census,
     command = county_pop %>% 
       separate(
-        NAME, c("county", "state"), sep = ", ", remove = FALSE
+        NAME, c("county", "state"), sep = ", ", remove = TRUE
       ) %>% 
-      mutate(county = sub("\\sCounty", "", county))
+      # Some states, like Louisiana, use something other than "County"
+      # e.g. Parish, or Census Area
+      mutate(county = sub("\\s(County|Parish|Census.Area)", "", county))
+  ),
+  tar_target(
+    name = states_census,
+    command = filter(clean_census, 
+                     state %in% c("Louisiana", "Maine"))
+  ),
+  tar_target(
+    name = add_features,
+    command = add_outage_id(states_eaglei) %>% 
+      join_eaglei_census(states_census)
+  ),
+  tar_target(
+    name = saidi_calcs,
+    command = calc_saidi(add_features)
+  ),
+  tar_target(
+    name = county_monthly,
+    command = summarise_mo_hr(add_features,
+                              c("county", "state", "month"))
+  ),
+  tar_target(
+    name = county_month_hour,
+    command = summarise_mo_hr(add_features,
+                              c("county", "state", "month", "hr"))
   )#,
-  
-  ## NEED TO QC "CENSUS AREAS" THAT ARE NOT COUNTIES, IN AK
-  
   # tar_target(
   #   name = ny_ecdf,
   #   command = state_county_ecdf(county_month_hour,
