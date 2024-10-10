@@ -93,18 +93,18 @@ list(
       join_eaglei_census(states_census)
   ),
   tar_target(
-    name = saidi_calcs,
+    name = saidi_calcs_by_min,
     command = calc_saidi(add_features)
   ),
   tar_target(
-    name = county_monthly,
-    command = summarise_mo_hr(add_features,
-                              c("county", "state", "month"))
-  ),
-  tar_target(
-    name = county_month_hour,
-    command = summarise_mo_hr(add_features,
-                              c("county", "state", "month", "hr"))
+    name = county_outage_saidi,
+    command = saidi_calcs_by_min %>% 
+      ## Create a summary row for each outage in each state/county
+      summarise(saidi = sum(saidi),
+                outage_interval = {max(run_start_time) - min(run_start_time)} %>% 
+                  as.difftime() %>% 
+                  as.numeric(units = "hours"),
+                .by = c(state, county, outage_id))
   )#,
   # tar_target(
   #   name = ny_ecdf,
