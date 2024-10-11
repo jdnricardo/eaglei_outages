@@ -34,44 +34,46 @@ add_outage_id <- function(eaglei_df, outage_gap_min = 15) {
          .by = c(state, county))
 }
 
+calc_saidi <- function(eaglei_df,
+                       census_df,
+                       # Time intervals are 15min per documentation, or 0.25h
+                       data_interval = as.numeric(0.25, units = "hours"),
+                       summ_by) {
+  
+  eaglei_df %>%
+    summarise(
+      # Within each outage interval, how many customers were affected
+      tot_cust_hrs = sum(customers_out),
+      # whether grouped by state, state+county, etc.
+      .by = all_of(summ_by)
+    ) %>% 
+    # Join the relevant population data (may need to add year to possible vars)
+    join_eaglei_census(census_df,
+                       join_spec = intersect(summ_by,
+                                             c("state", "county"))) %>% 
+    # Turn number of intervals into units of time (hours by default)
+    mutate(
+      across(c(tot_cust_hrs), \(x) { x * data_interval}),
+      # Then calculate SAIDI
+      saidi = tot_cust_hrs / pop
+    )
+}
+
 join_eaglei_census <- function(eaglei_df,
-                               census_df) {
+                               census_df,
+                               join_spec) {
   
   # For now, preserving any outage data without population data
   left_join(
     eaglei_df,
     select(census_df, -variable) %>% 
-      rename(county_pop = value),
-    by = c("county", "state")
+      summarise(
+        value = sum(value), 
+        .by = all_of(join_spec)
+      ) %>% 
+      rename(pop = value),
+    by = join_spec
   )
-}
-
-calc_saidi <- function(eaglei_df,
-                       # Time intervals are 15min per documentation, or 0.25h
-                       data_interval = as.numeric(15, units = "minutes")) {
-  eaglei_df %>%
-    # This step assumes that all county residents are on the grid. Neither the
-    # outage data nor the population data is split by utility territory
-    mutate(saidi = customers_out * data_interval / county_pop)
-}
-  
-summarise_mo_hr <- function(eaglei_df,
-                            summ_by,
-                            # Time intervals are 15min per documentation, or 0.25h
-                            data_interval = as.numeric(0.25, units = "hours")) {
-  
-  eaglei_df %>%
-    mutate(month = month(run_start_time),
-           hr = hour(run_start_time)) %>%
-    # This step assumes that all county residents are on the grid. Neither the
-    # outage data nor the population data is split by utility territory
-    mutate(out_hours = data_interval,
-           customer_hours = customers_out * out_hours) %>%
-    summarise(
-      across(c(out_hours,customer_hours),
-             \(x) sum(x, na.rm = TRUE)),
-      .by = all_of(summ_by)
-    )
 }
 
 state_ecdf <- function(summ_eaglei, state) {

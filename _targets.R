@@ -57,13 +57,23 @@ tar_source()
 # Replace the target list below with your own:
 list(
   tar_target(
+    name = chosen_states,
+    command = c(
+      # Started with
+      "Louisiana", "Maine",
+      # Expanded to
+      "Texas", "West Virginia", "Mississippi",
+      "Michigan", "Kentucky", "Oregon"
+    )
+  ),
+  tar_target(
     name = load_one_year,
     command = load_eaglei_year(2021)
   ),
   tar_target(
     name = states_eaglei,
     command = filter(load_one_year,
-                     state %in% c("Louisiana", "Maine"))
+                     state %in% chosen_states)
   ),
   tar_target(
     name = county_pop,
@@ -85,26 +95,23 @@ list(
   tar_target(
     name = states_census,
     command = filter(clean_census, 
-                     state %in% c("Louisiana", "Maine"))
+                     state %in% chosen_states)
   ),
   tar_target(
     name = add_features,
-    command = add_outage_id(states_eaglei) %>% 
-      join_eaglei_census(states_census)
+    command = add_outage_id(states_eaglei)
   ),
   tar_target(
-    name = saidi_calcs_by_min,
-    command = calc_saidi(add_features)
+    name = county_saidi,
+    command = calc_saidi(add_features,
+                         states_census,
+                         summ_by = c("state", "county"))
   ),
   tar_target(
-    name = county_outage_saidi,
-    command = saidi_calcs_by_min %>% 
-      ## Create a summary row for each outage in each state/county
-      summarise(saidi = sum(saidi),
-                outage_interval = {max(run_start_time) - min(run_start_time)} %>% 
-                  as.difftime() %>% 
-                  as.numeric(units = "hours"),
-                .by = c(state, county, outage_id))
+    name = state_saidi,
+    command = calc_saidi(add_features,
+                         states_census,
+                         summ_by = c("state"))
   )#,
   # tar_target(
   #   name = ny_ecdf,
