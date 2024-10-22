@@ -97,22 +97,34 @@ list(
     command = filter(clean_census, 
                      state %in% chosen_states)
   ),
-  tar_target(
-    name = add_features,
-    command = add_outage_id(states_eaglei)
-  ),
+  # tar_target(
+  #   name = add_features,
+  #   command = 
+  # ),
   tar_target(
     name = county_saidi,
-    command = calc_saidi(add_features,
+    command = calc_saidi(states_eaglei,
                          states_census,
                          summ_by = c("state", "county"))
   ),
   tar_target(
     name = state_saidi,
-    command = calc_saidi(add_features,
+    command = calc_saidi(states_eaglei,
                          states_census,
                          summ_by = c("state"))
-  )#,
+  ),
+  tar_target(
+    name = county_saifi,
+    command = calc_saifi(states_eaglei,
+                         states_census,
+                         summ_by = c("state", "county"))
+  ),
+  tar_target(
+    name = state_saifi,
+    command = summarise(county_saifi,
+                        saifi = weighted.mean(saifi, pop),
+                        .by = "state")
+  )
   # tar_target(
   #   name = ny_ecdf,
   #   command = state_county_ecdf(county_month_hour,
