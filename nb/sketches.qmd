@@ -1,0 +1,162 @@
+---
+title: "Visualizing outage data"
+date: "today"
+---
+
+```{r setup, include=FALSE}
+library(targets)
+library(tidytable)
+library(forcats)
+library(ggplot2)
+library(ggtext)
+library(ggrepel)
+library(scales)
+
+theme_set(theme_minimal(base_size = 18) +
+            theme(panel.grid = element_blank()))
+
+tar_load(matches("sai[df]i"), store = "../_targets")
+```
+
+## SAIDI
+
+For each state, total duration of annual interruptions in hours. Source for US average is this EIA [article](https://www.eia.gov/todayinenergy/detail.php?id=54639), including major events
+
+```{r state_saidi}
+state_saidi %>% 
+  bind_rows(
+    data.frame(
+      state = "US median*",
+      # Technically, they say "just over seven hours"
+      # so I added 5%
+      saidi = 7*1.05
+    )
+  ) %>% 
+  mutate(
+    state = fct_reorder(state, saidi) %>% 
+      fct_relevel("US median*", after = 0)
+  ) %>% 
+  ggplot(aes(x = saidi,
+             y = state)) +
+  geom_col(aes(fill = state == "US median*")) +
+  scale_fill_manual(values = c("#009E8C",
+                               "#DB0072")) +
+  labs(caption = "*including major events") +
+  guides(fill = "none") +
+  theme(panel.grid.major.x = element_line("grey90"),
+        axis.title = element_blank())
+```
+
+then, for each county within those states
+
+```{r county_saidi}
+county_saidi %>% 
+  mutate(
+    state = fct_reorder(state, saidi)
+  ) %>% 
+  ggplot(aes(x = saidi,
+             y = state)) +
+  geom_violin(draw_quantiles = c(0.05, 0.5, 0.95),
+              fill = "#009E8C") +
+  geom_vline(xintercept = 7*1.05,
+             color = "#DB0072",
+             size = rel(1.1)) +
+  scale_x_sqrt() +
+  labs(title = "States' county SAIDIs compared to the <span style = 'color:#DB0072;'><strong>US median</strong></span>", 
+       caption = "*including major events") +
+  guides(fill = "none") +
+  theme(panel.grid.major.x = element_line("grey90"),
+        axis.title = element_blank(),
+        title = element_markdown(size = rel(0.8)))
+```
+
+## SAIFI
+
+First, state-level results
+
+```{r state_saifi}
+state_saifi %>% 
+  bind_rows(
+    data.frame(
+      state = "US median*",
+      # I am "transcribing" this value from the chart the EIA provides
+      saifi = 1.4
+    )
+  ) %>% 
+  mutate(
+    state = fct_reorder(state, saifi) %>% 
+      fct_relevel("US median*", after = 0)
+  ) %>% 
+  ggplot(aes(x = saifi,
+             y = state)) +
+  geom_col(aes(fill = state == "US median*")) +
+  scale_fill_manual(values = c("#009E8C",
+                               "#DB0072")) +
+  labs(caption = "*including major events") +
+  guides(fill = "none") +
+  theme(panel.grid.major.x = element_line("grey90"),
+        axis.title = element_blank())
+```
+
+then, for each county within those states
+
+```{r county_saifi}
+county_saifi %>% 
+  mutate(
+    state = fct_reorder(state, saifi)
+  ) %>% 
+  ggplot(aes(x = saifi,
+             y = state)) +
+  geom_violin(draw_quantiles = c(0.05, 0.5, 0.95),
+              fill = "#009E8C") +
+  geom_vline(xintercept = 1.4,
+             color = "#DB0072",
+             size = rel(1.1)) +
+  scale_x_sqrt() +
+  labs(title = "States' county SAIFIs compared to the <span style = 'color:#DB0072;'><strong>US median</strong></span>", 
+       caption = "*including major events") +
+  guides(fill = "none") +
+  theme(panel.grid.major.x = element_line("grey90"),
+        axis.title = element_blank(),
+        title = element_markdown(size = rel(0.8)))
+```
+
+## Scatterplot!
+
+```{r scatter, fig.asp=1/2}
+inner_join(
+  state_saidi,
+  state_saifi,
+  by = "state"
+) %>% 
+  bind_rows(
+    data.frame(
+      state = "US median*",
+      # Technically, they say "just over seven hours" so I added 5% to SAIDI.
+      # SAIFI is interpreted from graph
+      saidi = 7*1.05,
+      saifi = 1.4
+    )
+  ) %>% 
+  mutate(
+    state = fct_reorder(state, saidi)
+  ) %>% 
+  ggplot(aes(x = saidi,
+             y = saifi)) +
+  geom_point(aes(color = state == "US median*"),
+             size = rel(4),
+             alpha = 1/1.5) +
+  geom_text_repel(aes(color = state == "US median*",
+                      label = state)) +
+  scale_color_manual(values = c("#009E8C",
+                               "#DB0072")) +
+  expand_limits(x = 0,
+                y = 0) +
+  labs(title = "States' SAIDIs & SAIFIs compared to the <span style = 'color:#DB0072;'><strong>US median</strong></span>", 
+       caption = "*including major events") +
+  guides(color = "none") +
+  theme(panel.grid.major = element_line("grey90"),
+        axis.title = element_blank(),
+        title = element_markdown(size = rel(0.8)))
+```
+
