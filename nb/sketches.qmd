@@ -14,8 +14,8 @@ library(scales)
 
 theme_set(theme_minimal(base_size = 18) +
             theme(panel.grid = element_blank(),
-                  panel.background = element_rect(fill = "#fcfcfc",
-                                                  color = "#fcfcfc")))
+                  plot.background = element_rect(fill = "#fcfcfc",
+                                                 color = "#fcfcfc")))
 
 tar_load(matches("sai[df]i"), store = "../_targets")
 
@@ -67,7 +67,7 @@ county_saidi %>%
   geom_vline(xintercept = 7*1.05,
              color = median_red,
              linewidth = rel(1.1)) +
-  scale_x_sqrt() +
+  scale_x_sqrt(breaks = c(0,10,100,200,300)) +
   labs(title = paste("States' county SAIDIs compared to the", median_tag), 
        caption = "*including major events") +
   guides(fill = "none") +
@@ -118,7 +118,7 @@ county_saifi %>%
   geom_vline(xintercept = 1.4,
              color = median_red,
              linewidth = rel(1.1)) +
-  scale_x_sqrt() +
+  scale_x_sqrt(breaks = c(0,1,10,20,30,40)) +
   labs(title = paste("States' county SAIFIs compared to the", median_tag),
        caption = "*including major events") +
   guides(fill = "none") +
