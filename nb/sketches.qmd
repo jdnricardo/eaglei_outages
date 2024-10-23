@@ -13,7 +13,9 @@ library(ggrepel)
 library(scales)
 
 theme_set(theme_minimal(base_size = 18) +
-            theme(panel.grid = element_blank()))
+            theme(panel.grid = element_blank(),
+                  panel.background = element_rect(fill = "#fcfcfc",
+                                                  color = "#fcfcfc")))
 
 tar_load(matches("sai[df]i"), store = "../_targets")
 
